@@ -1,6 +1,5 @@
 ----------------------------------------------------------------------------
 -- Create a new stored procedure called 'usp_national_data' in schema 'dbo'
--- Drop the stored procedure if it already exists
 ----------------------------------------------------------------------------
 -- Drop the stored procedure if it already exists
 IF EXISTS (
@@ -115,7 +114,6 @@ END
 GO
 ----------------------------------------------------------------------------
 -- Create a new stored procedure called 'usp_regional_data' in schema 'dbo'
--- Drop the stored procedure if it already exists
 ----------------------------------------------------------------------------
 -- Drop the stored procedure if it already exists
 IF EXISTS (
@@ -249,7 +247,6 @@ END
 GO
 ----------------------------------------------------------------------------
 -- Create a new stored procedure called 'usp_provincial_data' in schema 'dbo'
--- Drop the stored procedure if it already exists
 ----------------------------------------------------------------------------
 -- Drop the stored procedure if it already exists
 IF EXISTS (
