@@ -17,7 +17,7 @@ from flask_pymongo import PyMongo
 from flask_sitemap import Sitemap
 
 from config import config as app_config
-from settings import LANGUAGES, TRANSLATION_DIRNAME
+from settings import TRANSLATION_DIRNAME, LANGUAGES
 
 load_dotenv()
 mongo = PyMongo()
