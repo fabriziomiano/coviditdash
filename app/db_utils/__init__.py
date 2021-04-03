@@ -1,0 +1,20 @@
+"""
+DB Module
+"""
+import os
+
+from app import mongo
+
+NAT_DATA_COLL = mongo.db[os.environ["NATIONAL_DATA_COLLECTION"]]
+NAT_TRENDS_COLL = mongo.db[os.environ["NATIONAL_TRENDS_COLLECTION"]]
+NAT_SERIES_COLL = mongo.db[os.environ["NATIONAL_SERIES_COLLECTION"]]
+REG_DATA_COLL = mongo.db[os.environ["REGIONAL_DATA_COLLECTION"]]
+REG_TRENDS_COLL = mongo.db[os.environ["REGIONAL_TRENDS_COLLECTION"]]
+REG_SERIES_COLL = mongo.db[os.environ["REGIONAL_SERIES_COLLECTION"]]
+REG_BREAKDOWN_COLL = mongo.db[os.environ["REGIONAL_BREAKDOWN_COLLECTION"]]
+PROV_DATA_COLL = mongo.db[os.environ["PROVINCIAL_DATA_COLLECTION"]]
+PROV_TRENDS_COLL = mongo.db[os.environ["PROVINCIAL_TRENDS_COLLECTION"]]
+PROV_SERIES_COLL = mongo.db[os.environ["PROVINCIAL_SERIES_COLLECTION"]]
+PROV_BREAKDOWN_COLL = mongo.db[os.environ["PROVINCIAL_BREAKDOWN_COLLECTION"]]
+VAX_COLL = mongo.db[os.environ["VAX_COLLECTION"]]
+VAX_SUMMARY_COLL = mongo.db[os.environ["VAX_SUMMARY_COLLECTION"]]
