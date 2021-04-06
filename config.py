@@ -13,6 +13,8 @@ class BaseConfig(object):
     REDIS_URL = os.environ.get('REDIS_URL')
     MONGO_URI = os.environ.get('MONGO_URI')
     SITEMAP_INCLUDE_RULES_WITHOUT_PARAMS = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     CELERY_CONFIG = {
         'broker_url': REDIS_URL,
         'result_backend': REDIS_URL
