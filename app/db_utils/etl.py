@@ -1,6 +1,7 @@
 """
 Where the ETL happens
 """
+import numpy as np
 import pandas as pd
 from flask import current_app as app
 
@@ -8,18 +9,21 @@ from app.data import (
     CUM_QUANTITIES, NON_CUM_QUANTITIES, DAILY_QUANTITIES, TREND_CARDS,
     PROV_TREND_CARDS
 )
-from settings import NEW_POSITIVE_KEY, NEW_POSITIVE_MA_KEY, TOTAL_CASES_KEY, \
-    DAILY_SWABS_KEY, VARS_CONF, REGIONS, PROVINCES, ITALY_POPULATION, \
-    OD_TO_PC_MAP
-from settings.vars import DAILY_POSITIVITY_INDEX, REGION_KEY, PROVINCE_KEY, \
-    REGION_CODE, PROVINCE_CODE, VAX_DATE_FMT, CHART_DATE_FMT, DATE_KEY, \
-    STATE_KEY, VAX_DATE_KEY, VAX_AREA_KEY, VAX_TYPE_KEY, VAX_AGE_KEY, POP_KEY, \
-    F_SEX_KEY, M_SEX_KEY
+from settings import (
+    NEW_POSITIVE_KEY, NEW_POSITIVE_MA_KEY, TOTAL_CASES_KEY, DAILY_SWABS_KEY,
+    VARS_CONF, REGIONS, PROVINCES, ITALY_POPULATION, OD_TO_PC_MAP
+)
+from settings.vars import (
+    DAILY_POSITIVITY_INDEX, REGION_KEY, PROVINCE_KEY, REGION_CODE,
+    PROVINCE_CODE, CHART_DATE_FMT, DATE_KEY, STATE_KEY,
+    VAX_DATE_KEY, VAX_AREA_KEY, VAX_AGE_KEY, POP_KEY, F_SEX_KEY,
+    M_SEX_KEY
+)
 
 COLUMNS_TO_DROP = [STATE_KEY]
 
 
-def load_df(url):
+def load_cp_df(url):
     """
     Return a CP dataframe without the columns defined in COLUMNS_TO_DROP
     :param url: str: CP-repository data URL
@@ -97,12 +101,13 @@ def clean_df(df):
     :param df: pd.DataFrame
     :return: pd.DataFrame
     """
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
     df = df.where(pd.notnull(df), None)
     df = df.fillna(value=0)
     return df
 
 
-def augment_national_df(df):
+def preprocess_national(df):
     """
     Augment the national PC DataFrame:
      add the delta, the percentages, and the positivity index
@@ -118,7 +123,7 @@ def augment_national_df(df):
     return df_augmented
 
 
-def augment_regional_df(df):
+def preprocess_regional(df):
     """
     Augment the regional PC DataFrame:
      add the delta, the percentages, and the positivity index to every
@@ -139,7 +144,7 @@ def augment_regional_df(df):
     return df_augmented
 
 
-def augment_provincial_df(df):
+def preprocess_provincial(df):
     """
     Augment the provincial PC DataFrame:
      add the new positive and the relevant percentage
@@ -437,34 +442,22 @@ def build_provincial_series(df):
     return provincial_series
 
 
-def augment_vax_df(df):
+def preprocess_admins(df):
     """
     Return a modified version of the input df.
-    Add two columns '_id' and 'totale'.
-    The former is computed as the concatenation of three strings
-    VAX_DATE_KEY + VAX_AGE_KEY + VAX_TYPE_KEY, and the latter as the sum of
-    the columns M_SEX_KEY + F_SEX_KEY
+    Add the column 'totale' as the sum of the columns M_SEX_KEY + F_SEX_KEY
     :param df: pandas.DataFrame
     :return: pandas.DataFrame
     """
     df[VAX_AGE_KEY] = df[VAX_AGE_KEY].apply(lambda x: x.strip())
     df['totale'] = df[M_SEX_KEY] + df[F_SEX_KEY]
-    df['_id'] = (
-            df[VAX_DATE_KEY].apply(lambda x: x.strftime(VAX_DATE_FMT)) +
-            df[VAX_AREA_KEY] +
-            df[VAX_AGE_KEY] +
-            df[VAX_TYPE_KEY]
-    )
     return df
 
 
-def augment_summary_vax_df(df):
+def preprocess_admins_summary(df):
     """
     Return a modified version of the input df.
-    Add two columns '_id' and POP_TOT_KEY.
-    The former is computed as the concatenation of two strings
-    VAX_DATE_KEY + VAX_AREA_KEY, and the latter is taken from the
-    ITALY_POPULATION dict.
+    Add POP_TOT_KEY column taken from the ITALY_POPULATION dict.
     :param df: pandas.DataFrame
     :return: pandas.DataFrame
     """
@@ -479,10 +472,6 @@ def augment_summary_vax_df(df):
             reg_df.fillna(0, inplace=True)
         out_df = out_df.append(reg_df)
     out_df.reset_index(inplace=True)
-    out_df['_id'] = (
-            out_df[VAX_DATE_KEY].apply(
-                lambda x: x.strftime(VAX_DATE_FMT)) + out_df[VAX_AREA_KEY]
-    )
     out_df[POP_KEY] = out_df[VAX_AREA_KEY].apply(
         lambda x: ITALY_POPULATION[OD_TO_PC_MAP[x]])
     return out_df
