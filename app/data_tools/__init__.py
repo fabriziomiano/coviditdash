@@ -271,7 +271,7 @@ def get_perc_pop_vax(population, area=None):
 def enrich_frontend_data(area=None, **data):
     """
     Return a data dict to be rendered which is an augmented copy of
-    DASHBOARD_DATA defined in constants.py
+    DASHBOARD_DATA defined in settings
     :param area: optional, str
     :param data: **kwargs
     :return: dict
