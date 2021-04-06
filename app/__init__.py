@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, render_template, send_from_directory
 from flask_babel import Babel
 from flask_compress import Compress
+from flask_sqlalchemy import SQLAlchemy
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_pymongo import PyMongo
@@ -25,6 +26,7 @@ babel = Babel()
 sitemap = Sitemap()
 compress = Compress()
 celery = Celery(__name__)
+db = SQLAlchemy()
 limiter = Limiter(key_func=get_remote_address)
 
 
@@ -85,6 +87,7 @@ def create_app():
         app.root_path, TRANSLATION_DIRNAME)
     compress.init_app(app)
     mongo.init_app(app)
+    db.init_app(app)
     babel.init_app(app)
     sitemap.init_app(app)
     set_error_handlers(app)
@@ -100,6 +103,30 @@ def create_app():
         }
     }
 
+    from .ui import pandemic, vaccines
+    app.register_blueprint(pandemic)
+    app.register_blueprint(vaccines)
+
+    from .api import api
+    app.register_blueprint(api)
+
+    from app.db_utils.create import (
+        create_national_table, create_regional_table,
+        create_national_trends_view, create_provincial_collections,
+        create_admins_table, create_summary_table, create_admins_summary_table
+    )
+
+    creation_menu = {
+        "national": create_national_table,
+        "national-trends": create_national_trends_view,
+        "regional": create_regional_table,
+        "provincial": create_provincial_collections,
+        "admins": create_admins_table,
+        "summary": create_summary_table,
+        "admins-summary": create_admins_summary_table
+
+    }
+
     @app.after_request
     def add_header(r):
         """
@@ -112,35 +139,7 @@ def create_app():
         r.headers["Cache-Control"] = "public, max-age=0"
         return r
 
-    from .ui import pandemic, vaccines
-    app.register_blueprint(pandemic)
-    app.register_blueprint(vaccines)
-
-    from .api import api
-    app.register_blueprint(api)
-
-    from app.db_tools.create import CollectionCreator
-    cc = CollectionCreator()
-
-    creation_menu = {  # functional dependency in data creation. order matters
-        "national": cc.create_national_collection,
-        "regional": cc.create_regional_collection,
-        "regional-population": cc.create_istat_pop_collection,
-        "per-age-population": cc.create_istat_age_pop_collection,
-        "provincial": cc.create_provincial_collections,
-        "national-trends": cc.create_national_trends_collection,
-        "regional-trends": cc.create_regional_trends_collection,
-        "provincial-trends": cc.create_provincial_trends_collection,
-        "regional-breakdown": cc.create_regional_breakdown_collection,
-        "provincial-breakdown": cc.create_provincial_breakdown_collection,
-        "national-series": cc.create_national_series_collection,
-        "regional-series": cc.create_regional_series_collection,
-        "provincial-series": cc.create_provincial_series_collection,
-        "vax-admins": cc.create_vax_admins_collection,
-        "vax-admins-summary": cc.create_vax_admins_summary_collection
-    }
-
-    @app.cli.command("create-collections")
+    @app.cli.command("create-db")
     def populate_db():
         """Populate all the collections needed on mongoDB"""
         for _type in creation_menu:
