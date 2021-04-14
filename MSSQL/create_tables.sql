@@ -2,7 +2,8 @@
 -- create Table nazione
 -----------------------
 DROP TABLE IF EXISTS  [dbo].[nazione]
-CREATE TABLE [dbo].[nazione](
+CREATE TABLE [dbo].[nazione]
+(
 	[data] [datetime2](7) NOT NULL,
 	[stato] [nvarchar](50) NULL,
 	[ricoverati_con_sintomi] [bigint] NULL,
@@ -33,7 +34,8 @@ GO
 -- create Table regioni
 -----------------------
 DROP TABLE [dbo].[regioni]
-CREATE TABLE [dbo].[regioni](
+CREATE TABLE [dbo].[regioni]
+(
 	[data] [datetime2](7) NOT NULL,
 	[stato] [nvarchar](50) NULL,
 	[codice_regione] [tinyint] NOT NULL,
@@ -64,7 +66,7 @@ CREATE TABLE [dbo].[regioni](
 	[tamponi_test_antigenico_rapido] [bigint] NULL,
 	[codice_nuts_1] [nvarchar](10) NULL,
 	[codice_nuts_2] [nvarchar](10) NULL,
- CONSTRAINT [PK_regioni] PRIMARY KEY CLUSTERED 
+	CONSTRAINT [PK_regioni] PRIMARY KEY CLUSTERED 
 (
 	[data] ASC,
 	[codice_regione] ASC,
@@ -76,7 +78,8 @@ GO
 -- create Table province
 -----------------------
 DROP TABLE [dbo].[province]
-CREATE TABLE [dbo].[province](
+CREATE TABLE [dbo].[province]
+(
 	[data] [datetime2](7) NOT NULL,
 	[stato] [text] NULL,
 	[codice_regione] [tinyint] NULL,

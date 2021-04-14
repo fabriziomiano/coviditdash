@@ -1,9 +1,13 @@
 -----------------------------------------
 -- Create v_national
 -----------------------------------------
-CREATE OR ALTER VIEW [dbo].[v_national] AS 
-WITH nat AS (
-    SELECT [data]
+CREATE OR ALTER VIEW [dbo].[v_national]
+AS
+    WITH
+        nat
+        AS
+        (
+            SELECT [data]
          , [ricoverati_con_sintomi]
          , [terapia_intensiva]
          , [totale_ospedalizzati]
@@ -16,11 +20,13 @@ WITH nat AS (
          , [tamponi]
          , [note]
          , [ingressi_terapia_intensiva]
-    FROM [dbo].[nazione]
-)
+            FROM [dbo].[nazione]
+        )
 ,
-diff AS (
-    SELECT *
+        diff
+        AS
+        (
+            SELECT *
          , [ricoverati_con_sintomi] - LAG([ricoverati_con_sintomi], 1, 0) OVER(ORDER BY [data])         AS [ricoverati_con_sintomi_g]
          , [terapia_intensiva] - LAG([terapia_intensiva], 1, 0) OVER(ORDER BY [data])                   AS [terapia_intensiva_g]
          , [totale_ospedalizzati] - LAG([totale_ospedalizzati], 1, 0) OVER(ORDER BY [data])             AS [totale_ospedalizzati_g]
@@ -32,11 +38,13 @@ diff AS (
          , [totale_casi] - LAG([totale_casi], 1, 0) OVER(ORDER BY [data])                               AS [totale_casi_g]
          , [tamponi] - LAG([tamponi], 1, 0) OVER(ORDER BY [data])                                       AS [tamponi_g]
          , [ingressi_terapia_intensiva] - LAG([ingressi_terapia_intensiva], 1, 0) OVER(ORDER BY [data]) AS [ingressi_terapia_intensiva_g]
-    FROM nat
-)
+            FROM nat
+        )
 ,
-perc AS (
-    SELECT *
+        perc
+        AS
+        (
+            SELECT *
          , [ricoverati_con_sintomi_g] / CAST([ricoverati_con_sintomi] AS decimal) * 100         AS [ricoverati_con_sintomi_perc]
          , [terapia_intensiva_g] / CAST([terapia_intensiva] AS decimal) * 100                   AS [terapia_intensiva_perc]
          , [totale_ospedalizzati_g] / CAST([totale_ospedalizzati] AS decimal) * 100             AS [totale_ospedalizzati_perc]
@@ -48,16 +56,21 @@ perc AS (
          , [totale_casi_g] / CAST([totale_casi] AS decimal) * 100                               AS [totale_casi_perc]
          , [tamponi_g] / CAST([tamponi] AS decimal) * 100                                       AS [tamponi_perc]
          , [ingressi_terapia_intensiva_g] / CAST([ingressi_terapia_intensiva] AS decimal) * 100 AS [ingressi_terapia_intensiva_perc]
-    FROM diff
-)
-SELECT * FROM perc
+            FROM diff
+        )
+    SELECT *
+    FROM perc
 GO
 -----------------------------------------
 -- Create v_regional
 -----------------------------------------
-CREATE OR ALTER VIEW [dbo].[v_regional] AS 
-WITH reg AS (
-    SELECT [data]
+CREATE OR ALTER VIEW [dbo].[v_regional]
+AS
+    WITH
+        reg
+        AS
+        (
+            SELECT [data]
          , [denominazione_regione]
          , [ricoverati_con_sintomi]
          , [terapia_intensiva]
@@ -71,11 +84,13 @@ WITH reg AS (
          , [tamponi]
          , [note]
          , [ingressi_terapia_intensiva]
-    FROM [dbo].[regioni]
-)
+            FROM [dbo].[regioni]
+        )
 ,
-diff AS (
-    SELECT *
+        diff
+        AS
+        (
+            SELECT *
          , [ricoverati_con_sintomi] - LAG([ricoverati_con_sintomi], 1, 0) OVER(PARTITION BY [denominazione_regione] ORDER BY [data])         AS [ricoverati_con_sintomi_g]
          , [terapia_intensiva] - LAG([terapia_intensiva], 1, 0) OVER(PARTITION BY [denominazione_regione] ORDER BY [data])                   AS [terapia_intensiva_g]
          , [totale_ospedalizzati] - LAG([totale_ospedalizzati], 1, 0) OVER(PARTITION BY [denominazione_regione] ORDER BY [data])             AS [totale_ospedalizzati_g]
@@ -87,11 +102,13 @@ diff AS (
          , [totale_casi] - LAG([totale_casi], 1, 0) OVER(PARTITION BY [denominazione_regione] ORDER BY [data])                               AS [totale_casi_g]
          , [tamponi] - LAG([tamponi], 1, 0) OVER(PARTITION BY [denominazione_regione] ORDER BY [data])                                       AS [tamponi_g]
          , [ingressi_terapia_intensiva] - LAG([ingressi_terapia_intensiva], 1, 0) OVER(PARTITION BY [denominazione_regione] ORDER BY [data]) AS [ingressi_terapia_intensiva_g]
-    FROM reg
-)
+            FROM reg
+        )
 ,
-perc AS (
-    SELECT *
+        perc
+        AS
+        (
+            SELECT *
          , CASE 
             WHEN [ricoverati_con_sintomi] <> 0 THEN [ricoverati_con_sintomi_g] / CAST([ricoverati_con_sintomi] AS decimal) * 100
             ELSE 0
@@ -136,46 +153,58 @@ perc AS (
             WHEN [ingressi_terapia_intensiva] <> 0 THEN [ingressi_terapia_intensiva_g] / CAST([ingressi_terapia_intensiva] AS decimal) * 100 
             ELSE 0
             END [ingressi_terapia_intensiva_perc]
-    FROM diff
-)
-SELECT * FROM perc
+            FROM diff
+        )
+    SELECT *
+    FROM perc
 GO
 -----------------------------------------
 -- Create v_provincial
 -----------------------------------------
-CREATE OR ALTER VIEW [dbo].[v_provincial] AS 
-WITH reg AS (
-    SELECT [data]
+CREATE OR ALTER VIEW [dbo].[v_provincial]
+AS
+    WITH
+        reg
+        AS
+        (
+            SELECT [data]
          , [denominazione_regione]
          , [denominazione_provincia]
          , [totale_casi]
          , [note]
-    FROM [dbo].[province]
-)
+            FROM [dbo].[province]
+        )
 ,
-new AS (
-    SELECT *
+        new
+        AS
+        (
+            SELECT *
          , [totale_casi] - LAG([totale_casi], 1, 0) OVER(PARTITION BY [denominazione_regione], [denominazione_provincia] ORDER BY [data]) AS [nuovi_positivi]
-    FROM reg
-)
+            FROM reg
+        )
 ,
-new_d AS (
-    SELECT *
+        new_d
+        AS
+        (
+            SELECT *
          , [nuovi_positivi] - LAG([nuovi_positivi], 1, 0) OVER(PARTITION BY [denominazione_regione], [denominazione_provincia] ORDER BY [data]) AS [nuovi_positivi_g]
-    FROM new    
-)
+            FROM new
+        )
 ,
-perc AS (
-    SELECT *
-         ,  CASE 
+        perc
+        AS
+        (
+            SELECT *
+         , CASE 
                 WHEN [totale_casi] <> 0 THEN [nuovi_positivi] / CAST([totale_casi] AS decimal) * 100 
                 ELSE 0
             END [totale_positivi_perc]
-         ,  CASE
+         , CASE
                 WHEN [nuovi_positivi] <> 0 THEN [nuovi_positivi_g] / CAST([nuovi_positivi] AS decimal) * 100
                 ELSE 0
             END [nuovi_positivi_perc]
-    FROM new_d
-)
-SELECT * FROM perc
+            FROM new_d
+        )
+    SELECT *
+    FROM perc
 GO

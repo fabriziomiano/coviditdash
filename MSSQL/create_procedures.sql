@@ -4,7 +4,7 @@
 -- Drop the stored procedure if it already exists
 IF EXISTS (
 SELECT *
-    FROM INFORMATION_SCHEMA.ROUTINES
+FROM INFORMATION_SCHEMA.ROUTINES
 WHERE SPECIFIC_SCHEMA = N'dbo'
     AND SPECIFIC_NAME = N'usp_national_data'
     AND ROUTINE_TYPE = N'PROCEDURE'
@@ -16,7 +16,8 @@ CREATE PROCEDURE dbo.usp_national_data
 AS
 BEGIN
     DROP TABLE IF EXISTS #national
-    CREATE TABLE #national (
+    CREATE TABLE #national
+    (
         [data] [datetime2](7) NOT NULL,
         [stato] [nvarchar](50) NULL,
         [ricoverati_con_sintomi] [bigint] NULL,
@@ -55,32 +56,33 @@ BEGIN
         KEEPNULLS
         )
 
-    INSERT INTO [dbo].[nazione] (
+    INSERT INTO [dbo].[nazione]
+        (
         [data]
-      , [stato]
-      , [ricoverati_con_sintomi]
-      , [terapia_intensiva]
-      , [totale_ospedalizzati]
-      , [isolamento_domiciliare]
-      , [totale_positivi]
-      , [variazione_totale_positivi]
-      , [nuovi_positivi]
-      , [dimessi_guariti]
-      , [deceduti]
-      , [casi_da_sospetto_diagnostico]
-      , [casi_da_screening]
-      , [totale_casi]
-      , [tamponi]
-      , [casi_testati]
-      , [note]
-      , [ingressi_terapia_intensiva]
-      , [note_test]
-      , [note_casi]
-      , [totale_positivi_test_molecolare]
-      , [totale_positivi_test_antigenico_rapido]
-      , [tamponi_test_molecolare]
-      , [tamponi_test_antigenico_rapido]    
-    )
+        , [stato]
+        , [ricoverati_con_sintomi]
+        , [terapia_intensiva]
+        , [totale_ospedalizzati]
+        , [isolamento_domiciliare]
+        , [totale_positivi]
+        , [variazione_totale_positivi]
+        , [nuovi_positivi]
+        , [dimessi_guariti]
+        , [deceduti]
+        , [casi_da_sospetto_diagnostico]
+        , [casi_da_screening]
+        , [totale_casi]
+        , [tamponi]
+        , [casi_testati]
+        , [note]
+        , [ingressi_terapia_intensiva]
+        , [note_test]
+        , [note_casi]
+        , [totale_positivi_test_molecolare]
+        , [totale_positivi_test_antigenico_rapido]
+        , [tamponi_test_molecolare]
+        , [tamponi_test_antigenico_rapido]
+        )
     SELECT [data]
          , [stato]
          , [ricoverati_con_sintomi]
@@ -104,11 +106,11 @@ BEGIN
          , [totale_positivi_test_molecolare]
          , [totale_positivi_test_antigenico_rapido]
          , [tamponi_test_molecolare]
-         , [tamponi_test_antigenico_rapido]   
+         , [tamponi_test_antigenico_rapido]
     from #national
     where [data] not in (
         select [data]
-        from [dbo].[nazione]
+    from [dbo].[nazione]
     )
 END
 GO
@@ -118,7 +120,7 @@ GO
 -- Drop the stored procedure if it already exists
 IF EXISTS (
 SELECT *
-    FROM INFORMATION_SCHEMA.ROUTINES
+FROM INFORMATION_SCHEMA.ROUTINES
 WHERE SPECIFIC_SCHEMA = N'dbo'
     AND SPECIFIC_NAME = N'usp_regional_data'
     AND ROUTINE_TYPE = N'PROCEDURE'
@@ -130,7 +132,8 @@ CREATE PROCEDURE [dbo].[usp_regional_data]
 AS
 BEGIN
     DROP TABLE IF EXISTS #regional
-    CREATE TABLE #regional (
+    CREATE TABLE #regional
+    (
         [data] [datetime2](7) NOT NULL,
         [stato] [nvarchar](50) NULL,
         [codice_regione] [tinyint] NULL,
@@ -176,38 +179,39 @@ BEGIN
         KEEPNULLS
         )
 
-    INSERT INTO [dbo].[regioni] (
+    INSERT INTO [dbo].[regioni]
+        (
         [data]
-      , [stato]
-      , [codice_regione]
-      , [denominazione_regione]
-      , [lat]
-      , [long]
-      , [ricoverati_con_sintomi]
-      , [terapia_intensiva]
-      , [totale_ospedalizzati]
-      , [isolamento_domiciliare]
-      , [totale_positivi]
-      , [variazione_totale_positivi]
-      , [nuovi_positivi]
-      , [dimessi_guariti]
-      , [deceduti]
-      , [casi_da_sospetto_diagnostico]
-      , [casi_da_screening]
-      , [totale_casi]
-      , [tamponi]
-      , [casi_testati]
-      , [note]
-      , [ingressi_terapia_intensiva]
-      , [note_test]
-      , [note_casi]
-      , [totale_positivi_test_molecolare]
-      , [totale_positivi_test_antigenico_rapido]
-      , [tamponi_test_molecolare]
-      , [tamponi_test_antigenico_rapido]
-      , [codice_nuts_1]
-      , [codice_nuts_2]
-    )
+        , [stato]
+        , [codice_regione]
+        , [denominazione_regione]
+        , [lat]
+        , [long]
+        , [ricoverati_con_sintomi]
+        , [terapia_intensiva]
+        , [totale_ospedalizzati]
+        , [isolamento_domiciliare]
+        , [totale_positivi]
+        , [variazione_totale_positivi]
+        , [nuovi_positivi]
+        , [dimessi_guariti]
+        , [deceduti]
+        , [casi_da_sospetto_diagnostico]
+        , [casi_da_screening]
+        , [totale_casi]
+        , [tamponi]
+        , [casi_testati]
+        , [note]
+        , [ingressi_terapia_intensiva]
+        , [note_test]
+        , [note_casi]
+        , [totale_positivi_test_molecolare]
+        , [totale_positivi_test_antigenico_rapido]
+        , [tamponi_test_molecolare]
+        , [tamponi_test_antigenico_rapido]
+        , [codice_nuts_1]
+        , [codice_nuts_2]
+        )
     SELECT [data]
          , [stato]
          , [codice_regione]
@@ -241,7 +245,7 @@ BEGIN
     from #regional
     where [data] not in (
         select [data]
-        from [dbo].[regioni]
+    from [dbo].[regioni]
     )
 END
 GO
@@ -251,7 +255,7 @@ GO
 -- Drop the stored procedure if it already exists
 IF EXISTS (
 SELECT *
-    FROM INFORMATION_SCHEMA.ROUTINES
+FROM INFORMATION_SCHEMA.ROUTINES
 WHERE SPECIFIC_SCHEMA = N'dbo'
     AND SPECIFIC_NAME = N'usp_provincial_data'
     AND ROUTINE_TYPE = N'PROCEDURE'
@@ -263,7 +267,8 @@ CREATE PROCEDURE dbo.usp_provincial_data
 AS
 BEGIN
     DROP TABLE IF EXISTS #provincial
-    CREATE TABLE #provincial (
+    CREATE TABLE #provincial
+    (
         [data] [datetime2](7) NOT NULL,
         [stato] [text] NULL,
         [codice_regione] [tinyint] NULL,
@@ -291,22 +296,23 @@ BEGIN
         KEEPNULLS
         )
 
-    INSERT INTO [dbo].[province] (
+    INSERT INTO [dbo].[province]
+        (
         [data]
-      , [stato]
-      , [codice_regione]
-      , [denominazione_regione]
-      , [codice_provincia]
-      , [denominazione_provincia]
-      , [sigla_provincia]
-      , [lat]
-      , [long]
-      , [totale_casi]
-      , [note]
-      , [codice_nuts_1]
-      , [codice_nuts_2]
-      , [codice_nuts_3]
-    )
+        , [stato]
+        , [codice_regione]
+        , [denominazione_regione]
+        , [codice_provincia]
+        , [denominazione_provincia]
+        , [sigla_provincia]
+        , [lat]
+        , [long]
+        , [totale_casi]
+        , [note]
+        , [codice_nuts_1]
+        , [codice_nuts_2]
+        , [codice_nuts_3]
+        )
     SELECT [data]
          , [stato]
          , [codice_regione]
@@ -324,7 +330,7 @@ BEGIN
     from #provincial
     where [data] not in (
         select [data]
-        from [dbo].[province]
+    from [dbo].[province]
     )
 END
 GO
