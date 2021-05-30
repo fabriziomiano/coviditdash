@@ -114,7 +114,7 @@ def get_pandemic_trends(stmt):
             "count": "{:+,d}".format(r['count']),
             "percentage_difference": "{:+d}%".format(
                 r['percentage_difference']),
-            "yesterday_count": "{:+d}".format(r['yesterday_count'])
+            "yesterday_count": "{:+,d}".format(r['yesterday_count'])
         })
     return data
 
