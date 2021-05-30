@@ -10,14 +10,14 @@ from sqlalchemy_views import CreateView
 from app import db
 from app.db_tools.etl import (
     load_df, preprocess_national_df, preprocess_regional_df,
-    preprocess_provincial_df, build_national_series,
-    preprocess_vax_admins_df, preprocess_vax_admins_summary_df
+    preprocess_provincial_df, preprocess_vax_admins_df,
+    preprocess_vax_admins_summary_df
 )
 from settings.urls import (
     URL_NATIONAL, URL_REGIONAL, URL_PROVINCIAL, URL_VAX_ADMINS_DATA,
     URL_VAX_SUMMARY_DATA, URL_VAX_ADMINS_SUMMARY_DATA
 )
-from settings.vars import VAX_DATE_KEY, DATE_KEY
+from settings.vars import VAX_DATE_KEY
 
 national_trends_view_script = './MySQL/national_trends_view.sql'
 regional_trends_view_script = './MySQL/regional_trends_view.sql'
@@ -59,22 +59,6 @@ class DBObjectsCreator:
                 con.execute(create_view)
         except Exception as e:
             app.logger.error(f'While creating national-trends view: {e}')
-
-    @staticmethod
-    def create_national_series_table():
-        """Drop and recreate national series data collection"""
-        df = pd.read_csv(URL_NATIONAL, parse_dates=[DATE_KEY])
-        df_national_augmented = preprocess_national_df(df)
-        national_series = build_national_series(df_national_augmented)
-        df = pd.json_normalize(national_series)
-        try:
-            app.logger.info("Creating national series collection")
-            df.to_sql('NATIONAL_SERIES', db.engine, index=False,
-                      if_exists='replace')
-            # nat_series_coll.drop()
-            # nat_series_coll.insert_one(national_series)
-        except Exception as e:
-            app.logger.error(e)
 
     @staticmethod
     def create_regional_table():
