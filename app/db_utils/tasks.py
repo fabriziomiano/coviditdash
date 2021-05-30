@@ -21,7 +21,8 @@ from app.db_utils import (
     VAX_SUMMARY_COLL
 )
 from settings.urls import (
-    URL_NATIONAL, URL_REGIONAL, URL_PROVINCIAL, URL_ADMINS, URL_ADMINS_SUMMARY
+    URL_NATIONAL, URL_REGIONAL, URL_PROVINCIAL, URL_VAX_ADMINS_DATA,
+    URL_VAX_ADMINS_SUMMARY_DATA
 )
 from settings import REGIONS, PROVINCES
 from settings.vars import REGION_KEY, PROVINCE_KEY, DATE_KEY, VAX_DATE_KEY
@@ -369,12 +370,12 @@ def update_vax_collection(summary=False):
     operations = []
     if not summary:
         collection = VAX_COLL
-        url = URL_ADMINS
+        url = URL_VAX_ADMINS_DATA
         df = pd.read_csv(url, parse_dates=[VAX_DATE_KEY])
         df = preprocess_admins(df)
     else:
         collection = VAX_SUMMARY_COLL
-        url = URL_ADMINS_SUMMARY
+        url = URL_VAX_ADMINS_SUMMARY_DATA
         df = pd.read_csv(url, parse_dates=[VAX_DATE_KEY])
         df = preprocess_admins_summary(df)
     try:
