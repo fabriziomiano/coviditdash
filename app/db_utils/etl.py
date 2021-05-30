@@ -5,19 +5,17 @@ import numpy as np
 import pandas as pd
 from flask import current_app as app
 
-from app.data import (
+from app.data_tools import (
     CUM_QUANTITIES, NON_CUM_QUANTITIES, DAILY_QUANTITIES, TREND_CARDS,
     PROV_TREND_CARDS
 )
-from settings import (
-    NEW_POSITIVE_KEY, NEW_POSITIVE_MA_KEY, TOTAL_CASES_KEY, DAILY_SWABS_KEY,
-    VARS_CONF, REGIONS, PROVINCES, ITALY_POPULATION, OD_TO_PC_MAP
-)
+from settings import REGIONS, PROVINCES, OD_TO_PC_MAP
 from settings.vars import (
+    NEW_POSITIVE_KEY, NEW_POSITIVE_MA_KEY, TOTAL_CASES_KEY, DAILY_SWABS_KEY,
     DAILY_POSITIVITY_INDEX, REGION_KEY, PROVINCE_KEY, REGION_CODE,
     PROVINCE_CODE, CHART_DATE_FMT, DATE_KEY, STATE_KEY,
     VAX_DATE_KEY, VAX_AREA_KEY, VAX_AGE_KEY, POP_KEY, F_SEX_KEY,
-    M_SEX_KEY
+    M_SEX_KEY, VARS, ITALY_POPULATION
 )
 
 COLUMNS_TO_DROP = [STATE_KEY]
@@ -42,7 +40,7 @@ def add_delta(df):
     :return: pd.DataFrame
     """
     columns = [
-        col for col in VARS_CONF if VARS_CONF[col]["type"] != "daily"
+        col for col in VARS if VARS[col]["type"] != "daily"
     ]
     for col in columns:
         try:
@@ -59,7 +57,7 @@ def add_percentages(df):
     :param df: pd.DataFrame
     :return: pd.DataFrame
     """
-    for col in VARS_CONF:
+    for col in VARS:
         try:
             diff_df = df[col].diff()
             df[col + "_perc"] = diff_df.div(df[col].shift(1).abs()) * 100
@@ -82,8 +80,8 @@ def add_positivity_idx(df):
 def add_moving_avg(df):
     """Add weekly moving average to the daily quantities"""
     cols = [
-        col for col in VARS_CONF
-        if VARS_CONF[col]["type"] == "daily" and not col.endswith("_ma")
+        col for col in VARS
+        if VARS[col]["type"] == "daily" and not col.endswith("_ma")
     ]
     for col in cols:
         try:
@@ -180,7 +178,7 @@ def build_trend(df, col):
     df[col] = df[col].astype('int')
     count = df[col].to_numpy()[-1]
     yesterday_count = df[col].to_numpy()[-2]
-    if VARS_CONF[col]["type"] in ("daily", "current", "cum"):
+    if VARS[col]["type"] in ("daily", "current", "cum"):
         count = "{0:+,d}".format(count)
         yesterday_count = "{0:+,d}".format(yesterday_count)
     try:
@@ -197,15 +195,15 @@ def build_trend(df, col):
         status = "stable"
     trend = {
         "id": col,
-        "type": VARS_CONF[col]["type"],
-        "title": VARS_CONF[col]["title"],
-        "desc": VARS_CONF[col]["desc"],
-        "longdesc": VARS_CONF[col]["longdesc"],
+        "type": VARS[col]["type"],
+        "title": VARS[col]["title"],
+        "desc": VARS[col]["desc"],
+        "longdesc": VARS[col]["longdesc"],
         "count": count,
-        "colour": VARS_CONF[col][status]["colour"],
-        "icon": VARS_CONF[col]["icon"],
-        "status_icon": VARS_CONF[col][status]["icon"],
-        "tooltip": VARS_CONF[col][status]["tooltip"],
+        "colour": VARS[col][status]["colour"],
+        "icon": VARS[col]["icon"],
+        "status_icon": VARS[col][status]["icon"],
+        "tooltip": VARS[col][status]["tooltip"],
         "percentage_difference": percentage,
         "yesterday_count": yesterday_count
     }
@@ -346,7 +344,7 @@ def build_series(df):
     series_daily = sorted([
         {
             "id": col,
-            "name": VARS_CONF[col]["title"],
+            "name": VARS[col]["title"],
             "data": df[col].to_numpy().tolist()
         }
         for col in DAILY_QUANTITIES
@@ -354,7 +352,7 @@ def build_series(df):
     series_cum = sorted([
         {
             "id": col,
-            "name": VARS_CONF[col]["title"],
+            "name": VARS[col]["title"],
             "data": df[col].to_numpy().tolist()
         }
         for col in CUM_QUANTITIES
@@ -362,7 +360,7 @@ def build_series(df):
     series_current = sorted([
         {
             "id": col,
-            "name": VARS_CONF[col]["title"],
+            "name": VARS[col]["title"],
             "data": df[col].to_numpy().tolist()
         }
         for col in NON_CUM_QUANTITIES
@@ -421,7 +419,7 @@ def build_provincial_series(df):
         series_daily = [
             {
                 "id": var,
-                "name": VARS_CONF[var]["title"],
+                "name": VARS[var]["title"],
                 "data": df_area[var].to_numpy().tolist()
             }
             for var in [NEW_POSITIVE_KEY, NEW_POSITIVE_MA_KEY]
@@ -429,7 +427,7 @@ def build_provincial_series(df):
         series_cum = [
             {
                 "id": TOTAL_CASES_KEY,
-                "name": VARS_CONF[TOTAL_CASES_KEY]["title"],
+                "name": VARS[TOTAL_CASES_KEY]["title"],
                 "data": df_area[TOTAL_CASES_KEY].to_numpy().tolist()
             }
         ]
