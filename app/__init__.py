@@ -11,11 +11,11 @@ from dotenv import load_dotenv
 from flask import Flask, request, render_template, send_from_directory
 from flask_babel import Babel
 from flask_compress import Compress
-from flask_sqlalchemy import SQLAlchemy
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_pymongo import PyMongo
 from flask_sitemap import Sitemap
+from flask_sqlalchemy import SQLAlchemy
 
 from config import config as app_config
 from settings import TRANSLATION_DIRNAME, LANGUAGES
@@ -110,20 +110,21 @@ def create_app():
     from .api import api
     app.register_blueprint(api)
 
-    from app.db_utils.create import (
-        create_national_table, create_regional_table,
-        create_national_trends_view, create_provincial_collections,
-        create_admins_table, create_summary_table, create_admins_summary_table
-    )
+    from app.db_utils.create import DBObjectsCreator
+
+    dboc = DBObjectsCreator()
 
     creation_menu = {
-        "national": create_national_table,
-        "national-trends": create_national_trends_view,
-        "regional": create_regional_table,
-        "provincial": create_provincial_collections,
-        "admins": create_admins_table,
-        "summary": create_summary_table,
-        "admins-summary": create_admins_summary_table
+        "national": dboc.create_national_table,
+        "national-trends": dboc.create_national_trends_view,
+        "regional": dboc.create_regional_table,
+        "regional-trends": dboc.create_regional_trends_view,
+        "regional-breakdown": dboc.create_regional_breakdown_view,
+        "provincial-trends": dboc.create_provincial_trends_view,
+        "provincial": dboc.create_provincial_table,
+        "admins": dboc.create_vax_admins_table,
+        "summary": dboc.create_vax_summary_table,
+        "admins-summary": dboc.create_vax_admins_summary_table
 
     }
 
@@ -141,14 +142,14 @@ def create_app():
 
     @app.cli.command("create-db")
     def populate_db():
-        """Populate all the collections needed on mongoDB"""
+        """Create the objects in the DB"""
         for _type in creation_menu:
             creation_menu[_type]()
 
     @app.cli.command("create")
     @click.argument("collection_type")
     def populate_collection(collection_type):
-        """Populate a collection type on the DB"""
+        """Create a specific object on DB"""
         allowed_types = [k for k in creation_menu]
         try:
             creation_menu[collection_type]()
