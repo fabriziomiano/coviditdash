@@ -11,9 +11,8 @@ from flask_babel import gettext
 
 from app import db
 from app.db_tools import (
-    nat_data_coll, reg_data_coll, prov_data_coll, reg_series_coll,
-    prov_series_coll, vax_admins_summary_coll, vax_admins_coll, pop_coll,
-    age_pop_coll
+    nat_data_coll, reg_data_coll, prov_data_coll, vax_admins_summary_coll,
+    vax_admins_coll, pop_coll, age_pop_coll
 )
 from app.utils import rubbish_notes, translate_series_lang
 from settings import (
@@ -200,24 +199,45 @@ def get_national_series():
     with db.engine.connect() as conn:
         df = pd.read_sql("NATIONAL", conn)
     from app.db_tools.etl import build_national_series
-    series = build_national_series(df)
+    series = translate_series_lang(build_national_series(df))
     return series
 
 
 def get_regional_series(region):
-    """Return regional series from DB"""
-    data = {}
-    series = reg_series_coll.find_one({REGION_KEY: region}, {"_id": False})
-    if series:
-        data = translate_series_lang(series)
-    return data
+    """
+    Return the regional series dict for a given region
+    :param region: str
+    :return: dict
+    """
+    region = region.replace("'", "''")
+    with db.engine.connect() as conn:
+        df = pd.read_sql(
+            "SELECT * "
+            "FROM covid.REGIONAL "
+            f"WHERE {REGION_KEY}='{region}'",
+            con=conn
+        )
+    from app.db_tools.etl import build_regional_series
+    series = translate_series_lang(build_regional_series(df)[0])
+    return series
 
 
 def get_provincial_series(province):
-    """Return provincial series from DB"""
-    series = prov_series_coll.find_one(
-        {PROVINCE_KEY: province}, {"_id": False})
-    return translate_series_lang(series)
+    """
+    Return the provincial series for a given province
+    :param province: str
+    :return: dict
+    """
+    with db.engine.connect() as conn:
+        df = pd.read_sql(
+            f"SELECT * "
+            f"FROM covid.PROVINCIAL "
+            f"WHERE {PROVINCE_KEY}='{province}'",
+            conn
+        )
+    from app.db_tools.etl import build_provincial_series
+    series = translate_series_lang(build_provincial_series(df)[0])
+    return series
 
 
 def get_positivity_idx(area_type="national", area=None):
@@ -241,48 +261,66 @@ def get_positivity_idx(area_type="national", area=None):
 
 
 def get_national_data():
-    """Return a data frame of the national data from DB"""
-    cursor = nat_data_coll.find({})
-    df = pd.DataFrame(list(cursor))
-    if df.empty:
-        app.logger.error("While getting national data: no data")
+    """
+    Return the National data df
+    :return: pd.DataFrame
+    """
+    with db.engine.connect() as conn:
+        df = pd.read_sql("NATIONAL", conn)
     return df
 
 
 def get_region_data(region):
-    """Return a data frame for a given region from the regional collection"""
-    cursor = reg_data_coll.find({REGION_KEY: region})
-    df = pd.DataFrame(list(cursor))
-    if df.empty:
-        app.logger.error(f"While getting {region} data: no data")
+    """
+    Return the regional df for a given region
+    :param region: str
+    :return: pd.DataFrame
+    """
+    region = region.replace("'", "''")
+    with db.engine.connect() as conn:
+        df = pd.read_sql(
+            f"SELECT * "
+            f"FROM covid.REGIONAL "
+            f"WHERE {REGION_KEY}='{region}'",
+            conn
+        )
     return df
 
 
 def get_province_data(province):
     """
-    Return a data frame for a given province from the provincial collection
+    Return the provincial df for a given province
+    :param province:
+    :return:
     """
-    cursor = prov_data_coll.find({PROVINCE_KEY: province})
-    df = pd.DataFrame(list(cursor))
-    if df.empty:
-        app.logger.error(f"While getting {province} data: no data")
+    province = province.replace("'", "''")
+    with db.engine.connect() as conn:
+        df = pd.read_sql(
+            f"SELECT * "
+            f"FROM covid.PROVINCIAL "
+            f"WHERE {PROVINCE_KEY}='{province}'",
+            conn
+        )
     return df
 
 
 def get_latest_update(data_type="national"):
     """
-    Return the value of the key PCM_DATE_KEY of the last dict in data
+    Return the str-formatted value of the latest update datetime
+    for a given data type
+    :param data_type: str, optional
     :return: str
     """
-    query_menu = get_query_menu()
-    collection = query_menu[data_type]["collection"]
-    try:
-        doc = next(collection.find({}).sort([(DATE_KEY, -1)]).limit(1))
-        latest_update = doc[DATE_KEY].strftime(UPDATE_FMT)
-    except StopIteration:
-        app.logger.error("While getting latest update: no data")
-        latest_update = "n/a"
-    return latest_update
+    menu = {
+        "national": f"SELECT MAX({DATE_KEY}) AS updated_at FROM NATIONAL",
+        "regional": f"SELECT MAX({DATE_KEY}) AS updated_at FROM REGIONAL",
+        "provincial": f"SELECT MAX({DATE_KEY}) AS updated_at FROM PROVINCIAL"
+    }
+    query = menu[data_type]
+    with db.engine.connect() as conn:
+        results = conn.execute(query)
+    data = list(results)[0][0]
+    return data.strftime(UPDATE_FMT)
 
 
 def get_latest_vax_update():
