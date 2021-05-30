@@ -663,9 +663,9 @@ def get_it_pop_dict():
 
 def get_area_population(area=None):
     """
-
-    :param area:
-    :return:
+    Return the population for a given area, or Italy if area is None
+    :param area: str, optional
+    :return: int
     """
     pop_dict = get_it_pop_dict()
     try:
