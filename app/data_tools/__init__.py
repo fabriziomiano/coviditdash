@@ -9,9 +9,9 @@ import requests
 from flask import current_app as app
 from flask_babel import gettext
 
+from app import db
 from app.db_tools import (
-    nat_data_coll, reg_data_coll, prov_data_coll, nat_trends_coll,
-    reg_trends_coll, prov_trends_coll, reg_bdown_coll, prov_bdown_coll,
+    nat_data_coll, reg_data_coll, prov_data_coll,
     nat_series_coll, reg_series_coll, prov_series_coll,
     vax_admins_summary_coll, vax_admins_coll, pop_coll, age_pop_coll
 )
@@ -93,12 +93,37 @@ def get_notes(notes_type="national", area=None):
     return notes if notes is not None and not rubbish_notes(notes) else ""
 
 
+def get_pandemic_trends(stmt):
+    """
+    Return trend data for a given query
+    :param stmt: SQL statement
+    :return: list
+    """
+    with db.engine.connect() as conn:
+        results = conn.execute(stmt)
+    data = [dict(r) for r in results]
+    for r in data:
+        r.update({
+            "title": VARS[r['id']]["title"],
+            "desc": VARS[r['id']]["desc"],
+            "longdesc": VARS[r['id']]["longdesc"],
+            "colour": VARS[r['id']][r['status']]["colour"],
+            "icon": VARS[r['id']]["icon"],
+            "status_icon": VARS[r['id']][r['status']]["icon"],
+            "tooltip": VARS[r['id']][r['status']]["tooltip"],
+            "count": "{:+,d}".format(r['count']),
+            "percentage_difference": "{:+d}%".format(
+                r['percentage_difference']),
+            "yesterday_count": "{:+d}".format(r['yesterday_count'])
+        })
+    return data
+
+
 def get_national_trends():
     """Return national trends from DB"""
-    return sorted(
-        list(nat_trends_coll.find({})),
-        key=lambda x: list(VARS.keys()).index(x['id'])
-    )
+    stmt = "SELECT * FROM covid.v_NATIONAL_TRENDS"
+    data = get_pandemic_trends(stmt)
+    return data
 
 
 def get_regional_trends(region):
@@ -107,11 +132,11 @@ def get_regional_trends(region):
     :param region: str
     :return: list
     """
-    trends = []
-    doc = reg_trends_coll.find_one({REGION_KEY: region})
-    if doc:
-        trends = doc["trends"]
-    return trends
+    region = region.replace("'", "''")
+    stmt = (
+        f"SELECT * FROM covid.v_REGIONAL_TRENDS WHERE {REGION_KEY}='{region}'")
+    data = get_pandemic_trends(stmt)
+    return data
 
 
 def get_provincial_trends(province):
@@ -120,32 +145,51 @@ def get_provincial_trends(province):
     :param province: str
     :return: list
     """
-    doc = prov_trends_coll.find_one({PROVINCE_KEY: province})
-    return doc["trends"]
+    stmt = (
+        f"SELECT * "
+        f"FROM covid.v_PROVINCIAL_TRENDS "
+        f"WHERE {PROVINCE_KEY}='{province}'"
+    )
+    data = get_pandemic_trends(stmt)
+    return data
+
+
+def get_pandemic_breakdown(stmt):
+    """
+    Return breakdown dict for a given region
+    :param stmt: SQL query string
+    :return: dict
+    """
+    with db.engine.connect() as conn:
+        results = conn.execute(stmt)
+    results = [dict(r) for r in results]
+    return {
+        _id: [{
+            "area": r['area'],
+            "count": int(r['count']),
+            "url": r['url']
+        } for r in results if r['id'] == _id]
+        for _id in set([r['id'] for r in results])
+    }
 
 
 def get_regional_breakdown():
     """Return regional breakdown from DB"""
-    doc = reg_bdown_coll.find_one({}, {"_id": False})
-    if doc:
-        breakdown = {
-            key: sorted(doc[key], key=lambda x: x['count'], reverse=True)
-            for key in doc
-        }
-    else:
-        breakdown = {"err": "No data"}
-    return breakdown
+    stmt = "SELECT * FROM covid.v_REGIONAL_BREAKDOWN order by count desc"
+    data = get_pandemic_breakdown(stmt)
+    return data
 
 
 def get_provincial_breakdown(region):
     """Return provincial breakdown from DB"""
-    b = {}
-    doc = prov_bdown_coll.find_one({REGION_KEY: region}, {"_id": False})
-    if doc:
-        b = doc["breakdowns"]
-        for key in b.keys():
-            b[key] = sorted(b[key], key=lambda x: x['count'], reverse=True)
-    return b
+    region = region.replace("'", "''")
+    stmt = (
+        f"SELECT * "
+        f"FROM covid.v_PROVINCIAL_BREAKDOWN "
+        f"WHERE {REGION_KEY}='{region}' order by count desc"
+    )
+    data = get_pandemic_breakdown(stmt)
+    return data
 
 
 def get_national_series():
