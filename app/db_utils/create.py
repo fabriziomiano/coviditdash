@@ -8,16 +8,16 @@ from sqlalchemy.sql import text
 from sqlalchemy_views import CreateView
 
 from app import db
-from app.db_utils.etl import load_cp_df
-from app.db_utils.etl import (
-    preprocess_national, preprocess_regional, preprocess_provincial,
-    preprocess_admins, preprocess_admins_summary
+from app.db_tools.etl import (
+    load_df, preprocess_national_df, preprocess_regional_df,
+    preprocess_provincial_df, build_national_series,
+    preprocess_vax_admins_df, preprocess_vax_admins_summary_df
 )
 from settings.urls import (
     URL_NATIONAL, URL_REGIONAL, URL_PROVINCIAL, URL_VAX_ADMINS_DATA,
     URL_VAX_SUMMARY_DATA, URL_VAX_ADMINS_SUMMARY_DATA
 )
-from settings.vars import VAX_DATE_KEY
+from settings.vars import VAX_DATE_KEY, DATE_KEY
 
 national_trends_view_script = './MySQL/national_trends_view.sql'
 regional_trends_view_script = './MySQL/regional_trends_view.sql'
@@ -34,8 +34,8 @@ class DBObjectsCreator:
         Create National data table
         :return:
         """
-        df = load_cp_df(URL_NATIONAL)
-        df = preprocess_national(df)
+        df = load_df(URL_NATIONAL)
+        df = preprocess_national_df(df)
         try:
             app.logger.info("Creating National table")
             df.to_sql('NATIONAL', db.engine, index=False, if_exists='replace')
@@ -61,13 +61,29 @@ class DBObjectsCreator:
             app.logger.error(f'While creating national-trends view: {e}')
 
     @staticmethod
+    def create_national_series_table():
+        """Drop and recreate national series data collection"""
+        df = pd.read_csv(URL_NATIONAL, parse_dates=[DATE_KEY])
+        df_national_augmented = preprocess_national_df(df)
+        national_series = build_national_series(df_national_augmented)
+        df = pd.json_normalize(national_series)
+        try:
+            app.logger.info("Creating national series collection")
+            df.to_sql('NATIONAL_SERIES', db.engine, index=False,
+                      if_exists='replace')
+            # nat_series_coll.drop()
+            # nat_series_coll.insert_one(national_series)
+        except Exception as e:
+            app.logger.error(e)
+
+    @staticmethod
     def create_regional_table():
         """
         Create Regional table
         :return:
         """
-        df = load_cp_df(URL_REGIONAL)
-        df = preprocess_regional(df)
+        df = load_df(URL_REGIONAL)
+        df = preprocess_regional_df(df)
         try:
             app.logger.info("Creating Regional table")
             df.to_sql('REGIONAL', db.engine, index=False, if_exists='replace')
@@ -90,8 +106,7 @@ class DBObjectsCreator:
             with db.engine.connect() as con:
                 con.execute(create_view)
         except Exception as e:
-            app.logger.error(f'While creating regional-trends view: {e}')    \
-
+            app.logger.error(f'While creating regional-trends view: {e}')
 
     @staticmethod
     def create_regional_breakdown_view():
@@ -117,8 +132,8 @@ class DBObjectsCreator:
         Create Provincial table
         :return:
         """
-        df = load_cp_df(URL_PROVINCIAL)
-        df = preprocess_provincial(df)
+        df = load_df(URL_PROVINCIAL)
+        df = preprocess_provincial_df(df)
         try:
             app.logger.info("Creating Provincial table")
             df.to_sql(
@@ -154,7 +169,7 @@ class DBObjectsCreator:
         :return:
         """
         df = pd.read_csv(URL_VAX_ADMINS_DATA, parse_dates=[VAX_DATE_KEY])
-        df = preprocess_admins(df)
+        df = preprocess_vax_admins_df(df)
         try:
             app.logger.info("Creating Admins table")
             df.to_sql(
@@ -190,7 +205,7 @@ class DBObjectsCreator:
         """
         df = pd.read_csv(
             URL_VAX_ADMINS_SUMMARY_DATA, parse_dates=[VAX_DATE_KEY])
-        df = preprocess_admins_summary(df)
+        df = preprocess_vax_admins_summary_df(df)
         try:
             app.logger.info("Creating Admins Summary table")
             df.to_sql(
