@@ -11,9 +11,9 @@ from flask_babel import gettext
 
 from app import db
 from app.db_tools import (
-    nat_data_coll, reg_data_coll, prov_data_coll,
-    nat_series_coll, reg_series_coll, prov_series_coll,
-    vax_admins_summary_coll, vax_admins_coll, pop_coll, age_pop_coll
+    nat_data_coll, reg_data_coll, prov_data_coll, reg_series_coll,
+    prov_series_coll, vax_admins_summary_coll, vax_admins_coll, pop_coll,
+    age_pop_coll
 )
 from app.utils import rubbish_notes, translate_series_lang
 from settings import (
@@ -193,13 +193,15 @@ def get_provincial_breakdown(region):
 
 
 def get_national_series():
-    """Return national series from DB"""
-    series = nat_series_coll.find_one({}, {"_id": False})
-    if series:
-        data = translate_series_lang(series)
-    else:
-        data = {"err": "No data"}
-    return data
+    """
+    Return the national series dict
+    :return:
+    """
+    with db.engine.connect() as conn:
+        df = pd.read_sql("NATIONAL", conn)
+    from app.db_tools.etl import build_national_series
+    series = build_national_series(df)
+    return series
 
 
 def get_regional_series(region):
